@@ -1,4 +1,4 @@
-#include "DxLib.h"
+ï»¿#include "DxLib.h"
 #include <vector>
 #include <string>
 #include <fstream>
@@ -22,7 +22,7 @@ using namespace std;
 constexpr double max_amp = 902448;
 constexpr double amp_adj = 16380.0 / max_amp;
 
-// ------------------------------------------------------ ‰¹ŠÖŒW -----------------------------------------------
+// ------------------------------------------------------ ï¿½ï¿½ï¿½ÖŒW -----------------------------------------------
 
 LPDIRECTSOUND8 pDS = NULL;
 LPDIRECTSOUNDBUFFER pDSBPrimary = NULL;
@@ -65,7 +65,7 @@ DWORD ReadWave(LPDIRECTSOUNDBUFFER pDSBuffer, DWORD dwSize) {
 	return 1;
 }
 
-// ƒXƒŒƒbƒhˆ—
+// ï¿½Xï¿½ï¿½ï¿½bï¿½hï¿½ï¿½ï¿½ï¿½
 DWORD WINAPI NotificationProc(LPVOID lpParameter) {
 	MSG msg;
 	HWND hWnd = (HWND)lpParameter;
@@ -105,7 +105,7 @@ int initDs(HWND hWnd) {
 	hr = pDS->SetCooperativeLevel(hWnd, DSSCL_PRIORITY);
 	if(hr != DS_OK) return 0;
 
-	// ƒvƒ‰ƒCƒ}ƒŠƒoƒbƒtƒ@‚Ìì¬
+	// ï¿½vï¿½ï¿½ï¿½Cï¿½}ï¿½ï¿½ï¿½oï¿½bï¿½tï¿½@ï¿½Ìì¬
 	DSBUFFERDESC dsbd;
 	ZeroMemory(&dsbd, sizeof(DSBUFFERDESC));
 	dsbd.dwSize = sizeof(DSBUFFERDESC);
@@ -114,7 +114,7 @@ int initDs(HWND hWnd) {
 	hr = pDS->CreateSoundBuffer(&dsbd, &pDSBPrimary, NULL);
 	if(hr != DS_OK) return 0;
 
-	// ƒtƒH[ƒ}ƒbƒg‚ÌŽw’è
+	// ï¿½tï¿½Hï¿½[ï¿½}ï¿½bï¿½gï¿½ÌŽwï¿½ï¿½
 	WAVEFORMATEX wfx;
 	ZeroMemory(&wfx, sizeof(WAVEFORMATEX));
 	wfx.wFormatTag = (WORD)WAVE_FORMAT_PCM;
@@ -126,7 +126,7 @@ int initDs(HWND hWnd) {
 	hr = pDSBPrimary->SetFormat(&wfx);
 	if(hr != DS_OK) return 0;
 
-	// ƒZƒJƒ“ƒ_ƒŠƒoƒbƒtƒ@‚Ìì¬
+	// ï¿½Zï¿½Jï¿½ï¿½ï¿½_ï¿½ï¿½ï¿½oï¿½bï¿½tï¿½@ï¿½Ìì¬
 	WAVEFORMATEX wfx2;
 	ZeroMemory(&wfx2, sizeof(WAVEFORMATEX));
 	wfx2.wFormatTag = (WORD)WAVE_FORMAT_PCM;
@@ -140,12 +140,12 @@ int initDs(HWND hWnd) {
 	ZeroMemory(&dsbd2, sizeof(DSBUFFERDESC));
 	dsbd2.dwSize = sizeof(DSBUFFERDESC);
 	dsbd2.dwFlags = DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_CTRLPOSITIONNOTIFY | DSBCAPS_GLOBALFOCUS | DSBCAPS_STATIC | DSBCAPS_LOCDEFER;
-	dsbd2.dwBufferBytes = wfx2.nAvgBytesPerSec;	// 1•b•ª‚ÌƒZƒJƒ“ƒ_ƒŠƒoƒbƒtƒ@
+	dsbd2.dwBufferBytes = wfx2.nAvgBytesPerSec;	// 1ç§’åˆ†ã®ã‚»ã‚«ãƒ³ãƒ€ãƒªãƒãƒƒãƒ•ã‚¡
 	dsbd2.lpwfxFormat = &wfx2;
 	hr = pDS->CreateSoundBuffer(&dsbd2, &pDSBSecondary, NULL);
 	if(hr != DS_OK) return 0;
 
-	// ƒCƒxƒ“ƒg‚Ìƒnƒ“ƒhƒ‰
+	// ï¿½Cï¿½xï¿½ï¿½ï¿½gï¿½Ìƒnï¿½ï¿½ï¿½hï¿½ï¿½
 	hNotificationEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	if(hNotificationEvent == NULL) return 0;
 
@@ -155,7 +155,7 @@ int initDs(HWND hWnd) {
 	dwBufferSize = dsbd2.dwBufferBytes;
 	dwBufferUnit = dwBufferSize / BUF_DIVIDES;
 
-	// ’·‚­‚Ä‚àBUF_SEC•b•ª
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½BUF_SECï¿½bï¿½ï¿½
 	pulses_len = dwBufferSize * BUF_SEC;
 	pulses = (short *)malloc(pulses_len * sizeof(short));
 	if(pulses == NULL) return 0;
@@ -173,6 +173,9 @@ int initDs(HWND hWnd) {
 	hr = pDSNotify->SetNotificationPositions(BUF_DIVIDES, aPosNotify);
 	if(hr != DS_OK) return 0;
 
+	for(size_t i = 0; i < BUF_DIVIDES; i++) ReadWave(pDSBSecondary, dwBufferUnit);
+	pDSBSecondary->Play(0, 0, DSBPLAY_LOOPING);
+
 	return 1;
 }
 void end() {
@@ -187,7 +190,7 @@ void end() {
 	RELEASE(pDS);
 }
 
-// ------------------------------------------------------ FX•Ö—˜‚È‚â‚Â --------------------------------------------------
+// ------------------------------------------------------ ï¿½Fï¿½Xï¿½Ö—ï¿½ï¿½È‚ï¿½ï¿½ --------------------------------------------------
 
 template <typename T>
 class Point {
@@ -198,9 +201,9 @@ public:
 	T x, y;
 };
 
-// ------------------------------------------------------ ŒvŽZ—p --------------------------------------------------------------------
+// ------------------------------------------------------ ï¿½vï¿½Zï¿½p --------------------------------------------------------------------
 
-// Ž¿“_
+// ï¿½ï¿½ï¿½_
 class MassPoint {
 public:
 	MassPoint(): z(0), v(0) {
@@ -209,45 +212,45 @@ public:
 	MassPoint(double z, Point<double> &&coord): z(z), v(0), coord(coord) {
 	}
 
-	double z, v;	// Œ»Ý‚Ì•ÏˆÊA‹y‚Ñ‘¬‚³
-	Point<double> coord;	// ƒEƒBƒ“ƒhƒEã‚ÌÀ•W
+	double z, v;	// ï¿½ï¿½ï¿½Ý‚Ì•ÏˆÊAï¿½yï¿½Ñ‘ï¿½ï¿½ï¿½
+	Point<double> coord;	// ï¿½Eï¿½Bï¿½ï¿½ï¿½hï¿½Eï¿½ï¿½Ìï¿½ï¿½W
 };
 
-// Œ·
+// ï¿½ï¿½
 class HString {
 private:
-	// Œ·‚Ì•ªŠ„‚Ì¸“x
+	// ï¿½ï¿½ï¿½Ì•ï¿½ï¿½ï¿½ï¿½Ìï¿½ï¿½x
 	size_t N;
 
-	// Œ·‚Ì’·‚³‚ÆÅ‘åU•
+	// ï¿½ï¿½ï¿½Ì’ï¿½ï¿½ï¿½ï¿½ÆÅ‘ï¿½Uï¿½ï¿½
 	double length, max_amp;
 
-	// Œ·‚ÌÅ‰‚ÌŽ¿“_‚ª’u‚©‚ê‚éÀ•W
+	// ï¿½ï¿½ï¿½ÌÅï¿½ï¿½ÌŽï¿½ï¿½_ï¿½ï¿½ï¿½uï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½W
 	Point<double> pos;
 
-	// ƒoƒl‚Å‹ßŽ—‚µ‚½‚Æ‚«‚Ìƒpƒ‰ƒ[ƒ^AŽ¿—Ê‹y‚ÑƒoƒlŒW”
+	// ï¿½oï¿½lï¿½Å‹ßŽï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ‚ï¿½ï¿½Ìƒpï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½^ï¿½Aï¿½ï¿½ï¿½Ê‹yï¿½Ñƒoï¿½lï¿½Wï¿½ï¿½
 	double m, k;
 
-	// Ž¿“_‚½‚¿
+	// ï¿½ï¿½ï¿½_ï¿½ï¿½ï¿½ï¿½
 	vector<MassPoint> mass;
 
-	// U•‚ªÅ‘å‚ÌŽ¿“_(’†S)‚ÌƒZƒOƒƒ“ƒg
+	// ï¿½Uï¿½ï¿½ï¿½ï¿½ï¿½Å‘ï¿½ÌŽï¿½ï¿½_(ï¿½ï¿½ï¿½S)ï¿½ÌƒZï¿½Oï¿½ï¿½ï¿½ï¿½ï¿½g
 	size_t center_segment;
 
-	// ŒvŽZ—p‚Ì”÷¬ŽžŠÔ
+	// ï¿½vï¿½Zï¿½pï¿½Ì”ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	double dt;
 
-	// Ž©‘R‚Å‚·‚©H true: ‚Í‚¢ false: ‚¢‚¢‚¦
-	// Ž©‘R‚È‚çupdate‚ÅŽŸ‚Ìó‘Ô‚ðŽ©‘R‚ÉŒvŽZ‚·‚é
+	// ï¿½ï¿½ï¿½Rï¿½Å‚ï¿½ï¿½ï¿½ï¿½H true: ï¿½Í‚ï¿½ false: ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	// ï¿½ï¿½ï¿½Rï¿½È‚ï¿½updateï¿½ÅŽï¿½ï¿½Ìï¿½Ô‚ï¿½ï¿½ï¿½Rï¿½ÉŒvï¿½Zï¿½ï¿½ï¿½ï¿½
 	bool is_natural;
 
-	// ”gŒ`ƒf[ƒ^
+	// ï¿½gï¿½`ï¿½fï¿½[ï¿½^
 	vector<double> amps;
 	
-	// ”gŒ`ƒf[ƒ^‚ð‹L˜^‚·‚éƒtƒ‰ƒO
+	// ï¿½gï¿½`ï¿½fï¿½[ï¿½^ï¿½ï¿½Lï¿½^ï¿½ï¿½ï¿½ï¿½tï¿½ï¿½ï¿½O
 	bool recording_flag;
 
-	// ŠeŽ¿“_‚Ì•ÏˆÊ‚©‚çƒEƒBƒ“ƒhƒEã‚ÌÀ•W‚ð‹‚ßA‚»‚ÌŽ¿“_‚ðXV‚·‚é
+	// ï¿½eï¿½ï¿½ï¿½_ï¿½Ì•ÏˆÊ‚ï¿½ï¿½ï¿½Eï¿½Bï¿½ï¿½ï¿½hï¿½Eï¿½ï¿½Ìï¿½ï¿½Wï¿½ï¿½ï¿½ï¿½ßAï¿½ï¿½ï¿½ÌŽï¿½ï¿½_ï¿½ï¿½Xï¿½Vï¿½ï¿½ï¿½ï¿½
 	void z_to_coord() {
 		double dy = this->length / static_cast<double>(this->N);
 		for(size_t i = 0; i < this->N + 1; i++) {
@@ -256,9 +259,9 @@ private:
 		}
 	}
 
-	// dt•bŒã‚ÌŠeŽ¿“_‚ÌÀ•W‚ðŒvŽZ
+	// dtï¿½bï¿½ï¿½ÌŠeï¿½ï¿½ï¿½_ï¿½Ìï¿½ï¿½Wï¿½ï¿½vï¿½Z
 	void calcNext() {
-		// Ž¿“_‚Ì‘¬‚³‚ðXV‚·‚éB‚©‚©‚Á‚Ä‚¢‚é—Í‚Ì‘å‚«‚³‚©‚ç‰Á‘¬“x‚ðŒvŽZ‚µA‚»‚ê‚ðdt•b•ª‚¾‚¯Œ³‚ÌŽ¿“_‚Ì‘¬‚³‚É‰ÁŽZ‚·‚é
+		// ï¿½ï¿½ï¿½_ï¿½Ì‘ï¿½ï¿½ï¿½ï¿½ï¿½Xï¿½Vï¿½ï¿½ï¿½ï¿½Bï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½Í‚Ì‘å‚«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½xï¿½ï¿½vï¿½Zï¿½ï¿½ï¿½Aï¿½ï¿½ï¿½ï¿½ï¿½dtï¿½bï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÌŽï¿½ï¿½_ï¿½Ì‘ï¿½ï¿½ï¿½ï¿½É‰ï¿½ï¿½Zï¿½ï¿½ï¿½ï¿½
 		double f, a;
 		for(size_t i = 1; i < this->N; i++) {
 			f = -this->k * (this->mass.at(i).z - this->mass.at(i - 1).z) - this->k * (this->mass.at(i).z - this->mass.at(i + 1).z) - this->mass.at(i).v * 0.0001;
@@ -266,13 +269,13 @@ private:
 			this->mass.at(i).v += a * this->dt;
 		}
 
-		// Ž¿“_‚Ì•ÏˆÊ‚ðXV‚·‚éBŽ¿“_‚Ì‘¬‚³‚ð•ÏˆÊ‚É‰ÁŽZ‚·‚éB
+		// ï¿½ï¿½ï¿½_ï¿½Ì•ÏˆÊ‚ï¿½Xï¿½Vï¿½ï¿½ï¿½ï¿½Bï¿½ï¿½ï¿½_ï¿½Ì‘ï¿½ï¿½ï¿½ï¿½ï¿½ÏˆÊ‚É‰ï¿½ï¿½Zï¿½ï¿½ï¿½ï¿½B
 		for(size_t i = 1; i < this->N; i++) this->mass.at(i).z += this->mass.at(i).v * this->dt;
 
-		// Ž¿“_‚ÌÀ•W‚ÌXV
+		// ï¿½ï¿½ï¿½_ï¿½Ìï¿½ï¿½Wï¿½ÌXï¿½V
 		z_to_coord();
 
-		// ”gŒ`ƒf[ƒ^‚Ì‹L˜^
+		// ï¿½gï¿½`ï¿½fï¿½[ï¿½^ï¿½Ì‹Lï¿½^
 		size_t number = 3;
 		if(this->recording_flag) this->amps.emplace_back((short)(1e3 * this->mass.at(number).z));
 	}
@@ -282,22 +285,22 @@ public:
 		z_to_coord();
 	}
 
-	// Å‘åU•‚ÌƒQƒbƒ^[
+	// ï¿½Å‘ï¿½Uï¿½ï¿½ï¿½ÌƒQï¿½bï¿½^ï¿½[
 	double get_max_amp() const {
 		return this->max_amp;
 	}
 
-	// pos‚ÌƒQƒbƒ^[
+	// posï¿½ÌƒQï¿½bï¿½^ï¿½[
 	const Point<double> &get_pos() const {
 		return this->pos;
 	}
 
-	// is_natural‚ÌƒQƒbƒ^[
+	// is_naturalï¿½ÌƒQï¿½bï¿½^ï¿½[
 	bool get_is_natural() const {
 		return is_natural;
 	}
 
-	// is_natural‚Ì•ÏX
+	// is_naturalï¿½Ì•ÏX
 	void to_natural() {
 		this->is_natural = true;
 	}
@@ -306,50 +309,50 @@ public:
 		this->is_natural = false;
 	}
 
-	// Œ·‚Ìí‘Ô‚ð‰Šú‰»‚·‚éB(px, py)‚ÉŒ·‚ªˆø‚Á’£‚ç‚ê‚Ä‚¢‚éŠ´‚¶‚É‚È‚é
+	// ï¿½ï¿½ï¿½Ìï¿½Ô‚ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½B(px, py)ï¿½ÉŒï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½éŠ´ï¿½ï¿½ï¿½É‚È‚ï¿½
 	void set_init(double px, double py) {
-		// (px, py)‚ªŒ·‚ðˆø‚Á’£‚é‚æ‚¤‚ÈˆÊ’u‚É‚È‚¯‚ê‚Îreturn
+		// (px, py)ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½æ‚¤ï¿½ÈˆÊ’uï¿½É‚È‚ï¿½ï¿½ï¿½ï¿½return
 		if(py < this->mass.at(1).coord.y || py >= this->length + this->pos.y) {
 			to_natural();
 			return;
 		}
 
-		// py‚É‘Î‰ž‚µ‚½Œ·‚ÌƒZƒOƒƒ“ƒg‚ðŒˆ’è‚·‚éBi”Ô–Ú‚ÌŽ¿“_‚ÌyÀ•W‚ªpy‚É‚È‚é
+		// pyï¿½É‘Î‰ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÌƒZï¿½Oï¿½ï¿½ï¿½ï¿½ï¿½gï¿½ï¿½ï¿½ï¿½è‚·ï¿½ï¿½Biï¿½Ô–Ú‚ÌŽï¿½ï¿½_ï¿½ï¿½yï¿½ï¿½ï¿½Wï¿½ï¿½pyï¿½É‚È‚ï¿½
 		double dy = static_cast<double>(this->length) / static_cast<double>(this->N);
 		size_t i = (py - this->pos.y) / dy;
 		px -= this->pos.x;
 		double center_z_buf = this->mass.at(i).z;
 		this->mass.at(i).z = px;
 
-		// Šî€‚Æ‚È‚éƒZƒOƒƒ“ƒg‚ð’†S‚ÉAã‘¤‚ÉŒÅ’è‚³‚ê‚½Ž¿“_‚ÉŒü‚©‚Á‚ÄŒ·‚ð’£‚é
+		// ï¿½î€ï¿½Æ‚È‚ï¿½Zï¿½Oï¿½ï¿½ï¿½ï¿½ï¿½gï¿½ð’†Sï¿½ÉAï¿½ã‘¤ï¿½ÉŒÅ’è‚³ï¿½ê‚½ï¿½ï¿½ï¿½_ï¿½ÉŒï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÄŒï¿½ï¿½ð’£‚ï¿½
 		double slope = static_cast<double>(px) / (this->mass.at(i).coord.y - this->pos.y);
 		for(size_t j = 1; j < i; j++) this->mass.at(j).z = slope * (this->mass.at(j).coord.y - this->pos.y);
 
-		// Šî€‚Æ‚È‚éƒZƒOƒƒ“ƒg‚ð’†S‚ÉA‰º‘¤‚ÉŒÅ’è‚³‚ê‚½Ž¿“_‚ÉŒü‚©‚Á‚ÄŒ·‚ð’£‚é
+		// ï¿½î€ï¿½Æ‚È‚ï¿½Zï¿½Oï¿½ï¿½ï¿½ï¿½ï¿½gï¿½ð’†Sï¿½ÉAï¿½ï¿½ï¿½ï¿½ï¿½ÉŒÅ’è‚³ï¿½ê‚½ï¿½ï¿½ï¿½_ï¿½ÉŒï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÄŒï¿½ï¿½ð’£‚ï¿½
 		slope = -static_cast<double>(px) / (this->length - static_cast<double>(this->mass.at(i).coord.y) + this->pos.y);
 		for(size_t j = i + 1; j < this->N; j++) this->mass.at(j).z = px + slope * (this->mass.at(j).coord.y - this->mass.at(i).coord.y);
 
 
-		// ’†S‚ÌƒZƒOƒƒ“ƒg‚ðXV
+		// ï¿½ï¿½ï¿½Sï¿½ÌƒZï¿½Oï¿½ï¿½ï¿½ï¿½ï¿½gï¿½ï¿½Xï¿½V
 		this->center_segment = i;
 
-		// Œ·‚ª‚·‚Å‚É”ñnatural‚È‚çAˆø‚Á’£‚Á‚Ä‚¢‚é•ûŒü‚Æ‹tŒü‚«‚ÉƒJ[ƒ\ƒ‹‚ª“®‚¢‚½‚Æ‚«(‘O‚Ì•ÏˆÊ‚Æ¡‚Ì•ÏˆÊ‚ªˆÙ‚È‚é‚Æ‚«)AŒ³‚ÌxÀ•W‚ð’´‚¦‚½‚çƒJ[ƒ\ƒ‹‚É‚­‚Á‚Â‚©‚È‚¢‚æ‚¤‚É‚µ‚Ä‰¹‚à‚È‚ç‚È‚¢‚æ‚¤‚É‚È‚é
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å‚É”ï¿½naturalï¿½È‚ï¿½Aï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ‹tï¿½ï¿½ï¿½ï¿½ï¿½ÉƒJï¿½[ï¿½\ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ‚ï¿½(ï¿½Oï¿½Ì•ÏˆÊ‚Æï¿½ï¿½Ì•ÏˆÊ‚ï¿½ï¿½Ù‚È‚ï¿½Æ‚ï¿½)ï¿½Aï¿½ï¿½ï¿½ï¿½xï¿½ï¿½ï¿½Wï¿½ð’´‚ï¿½ï¿½ï¿½ï¿½ï¿½Jï¿½[ï¿½\ï¿½ï¿½ï¿½É‚ï¿½ï¿½ï¿½ï¿½Â‚ï¿½ï¿½È‚ï¿½ï¿½æ‚¤ï¿½É‚ï¿½ï¿½Ä‰ï¿½ï¿½ï¿½È‚ï¿½È‚ï¿½ï¿½æ‚¤ï¿½É‚È‚ï¿½
 		if(!this->is_natural && ((center_z_buf >= 0) != (this->mass.at(i).z >= 0)) && center_z_buf != 0) {
 			for(auto &m : this->mass) m.z = 0;
 			to_natural();
 		}
 
-		// À•W‚ÌXV
+		// ï¿½ï¿½ï¿½Wï¿½ÌXï¿½V
 		z_to_coord();
 
-		// ‰Šúó‘Ô‚È‚Ì‚Å‘¬‚³‚ð0‚É‰Šú‰»
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô‚È‚Ì‚Å‘ï¿½ï¿½ï¿½ï¿½ï¿½0ï¿½Éï¿½ï¿½ï¿½ï¿½ï¿½
 		for(auto &j : this->mass) j.v = 0;
 	}
 
-	// Œ·‚Í’e‚©‚ê‚Ä‚¢‚Ü‚·‚©H true:‚Í‚¢ false:‚¢‚¢‚¦
-	// Œ·‚ð’e‚¢‚Ä‚¢‚½‚çA‚»‚Ì‘¬‚³‚ðˆø”‚Ìres_yƒ|ƒCƒ“ƒ^‚Ì’†‚É‘ã“ü‚·‚é
+	// ï¿½ï¿½ï¿½Í’eï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½Ü‚ï¿½ï¿½ï¿½ï¿½H true:ï¿½Í‚ï¿½ false:ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	// ï¿½ï¿½ï¿½ï¿½eï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½ï¿½ï¿½Aï¿½ï¿½ï¿½Ì‘ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½res_yï¿½|ï¿½Cï¿½ï¿½ï¿½^ï¿½Ì’ï¿½ï¿½É‘ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	bool is_plucked(const Point<int> &mp, const Point<int> &mp_b, double &res_y) const {
-		// 1ƒtƒŒ[ƒ€‘O‚Ìƒ}ƒEƒXƒ|ƒCƒ“ƒ^‚ÌÀ•Wmp_b‚ÆAŒ»Ý‚Ìƒ}ƒEƒXƒ|ƒCƒ“ƒ^‚ÌÀ•Wmp‚ð”äŠr‚µAŒ·‚ðŒ×‚¢‚Å‚¢‚½‚ç’e‚¢‚Ä‚¢‚é‚±‚Æ‚É‚È‚éB
+		// 1ï¿½tï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½Oï¿½Ìƒ}ï¿½Eï¿½Xï¿½|ï¿½Cï¿½ï¿½ï¿½^ï¿½Ìï¿½ï¿½Wmp_bï¿½ÆAï¿½ï¿½ï¿½Ý‚Ìƒ}ï¿½Eï¿½Xï¿½|ï¿½Cï¿½ï¿½ï¿½^ï¿½Ìï¿½ï¿½Wmpï¿½ï¿½ï¿½rï¿½ï¿½ï¿½Aï¿½ï¿½ï¿½ï¿½×‚ï¿½ï¿½Å‚ï¿½ï¿½ï¿½ï¿½ï¿½eï¿½ï¿½ï¿½Ä‚ï¿½ï¿½é‚±ï¿½Æ‚É‚È‚ï¿½B
 		if((this->pos.x > mp_b.x && this->pos.x <= mp.x) || (this->pos.x < mp_b.x && this->pos.x >= mp.x)) {
 			double slope = static_cast<double>(static_cast<long long>(mp.y) - mp_b.y) / static_cast<double>(static_cast<long long>(mp.x) - mp_b.x);
 			double intersection_y = static_cast<double>(mp_b.y) + slope * (this->pos.x - static_cast<double>(mp_b.x));
@@ -362,9 +365,9 @@ public:
 		return false;
 	}
 
-	// Œ·‚ðdt•bŒã‚Ìó‘Ô‚ÖˆÚ‚·Bƒ‹[ƒv‚Ì‰ñ”‚ðã‚°‚ê‚Î“–‘R1ƒtƒŒ[ƒ€‚Å‚½‚­‚³‚ñó‘Ô‚ªi‚Þ‚Ì‚ÅŽü”g”‚ªã‚ª‚Á‚½‚æ‚¤‚ÈŠ´‚¶‚É‚È‚é
+	// ï¿½ï¿½ï¿½ï¿½dtï¿½bï¿½ï¿½Ìï¿½Ô‚ÖˆÚ‚ï¿½ï¿½Bï¿½ï¿½ï¿½[ï¿½vï¿½Ì‰ñ”‚ï¿½ã‚°ï¿½ï¿½Î“ï¿½ï¿½R1ï¿½tï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½Å‚ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô‚ï¿½ï¿½iï¿½Þ‚Ì‚ÅŽï¿½ï¿½gï¿½ï¿½ï¿½ï¿½ï¿½ã‚ªï¿½ï¿½ï¿½ï¿½ï¿½æ‚¤ï¿½ÈŠï¿½ï¿½ï¿½ï¿½É‚È‚ï¿½
 	void update() {
-		// U•‚ªŒÀŠE‚ð’´‚¦‚½‚Æ‚«natural‚É‚·‚é
+		// ï¿½Uï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Eï¿½ð’´‚ï¿½ï¿½ï¿½ï¿½Æ‚ï¿½naturalï¿½É‚ï¿½ï¿½ï¿½
 		if(!this->is_natural && this->max_amp < abs(this->mass.at(this->center_segment).z)) {
 			this->is_natural = true;
 			double v2 = abs(this->mass.at(this->center_segment).z);
@@ -382,14 +385,14 @@ public:
 		}
 	}
 
-	// Œ·‚Ì•`‰æBŠeŽ¿“_‚ÆŽ¿“_‚ÌŠÔ‚Éü•ª‚ð‚©‚¢‚Ä‚¢‚­
+	// ï¿½ï¿½ï¿½Ì•`ï¿½ï¿½Bï¿½eï¿½ï¿½ï¿½_ï¿½ÆŽï¿½ï¿½_ï¿½ÌŠÔ‚Éï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½
 	void draw() const {
 		for(size_t i = 1; i < this->N + 1; i++) {
 			DrawLineAA(this->mass.at(i - 1).coord.x, this->mass.at(i - 1).coord.y, this->mass.at(i).coord.x, this->mass.at(i).coord.y, BLACK);
 		}
 	}
 
-	// filename‚Ìƒtƒ@ƒCƒ‹‚ÉŒ·‚ÌU•ƒf[ƒ^‚ðo—Í
+	// filenameï¿½Ìƒtï¿½@ï¿½Cï¿½ï¿½ï¿½ÉŒï¿½ï¿½ÌUï¿½ï¿½ï¿½fï¿½[ï¿½^ï¿½ï¿½oï¿½ï¿½
 	void output(string filename) const {
 		ofstream of(filename);
 		of << "[";
@@ -402,18 +405,18 @@ public:
 	}
 };
 
-// ------------------------------------------------------ ƒvƒƒOƒ‰ƒ€‘S‘Ì‚ðŠÇ—‚·‚é‚â‚Â -------------------------------------------
+// ------------------------------------------------------ ï¿½vï¿½ï¿½ï¿½Oï¿½ï¿½ï¿½ï¿½ï¿½Sï¿½Ì‚ï¿½Ç—ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ -------------------------------------------
 class Root {
 private:
 	HString str;
 	bool updateFlag;
 
-	// ƒ}ƒEƒXƒ|ƒCƒ“ƒ^BŒ»Ý‚ÌÀ•W‚Æ1ƒtƒŒ[ƒ€‘O‚ÌÀ•W
+	// ï¿½}ï¿½Eï¿½Xï¿½|ï¿½Cï¿½ï¿½ï¿½^ï¿½Bï¿½ï¿½ï¿½Ý‚Ìï¿½ï¿½Wï¿½ï¿½1ï¿½tï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½Oï¿½Ìï¿½ï¿½W
 	Point<int> mp, mp_b;
 
 	void all_pluck() {
 		double res_y;
-		// ƒn[ƒv‚Í’e‚©‚ê‚Ä‚¢‚Ü‚·‚©H
+		// ï¿½nï¿½[ï¿½vï¿½Í’eï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½Ü‚ï¿½ï¿½ï¿½ï¿½H
 		if(str.get_is_natural() && str.is_plucked(this->mp, this->mp_b, res_y)) {
 			str.set_init(this->mp.x, this->mp.y);
 			str.to_not_natural();
@@ -426,14 +429,14 @@ public:
 	Root(): str(Point<double>(320, 80), 300, 50), updateFlag(false), mp(0, 0), mp_b(0, 0) {
 	}
 
-	// ƒƒCƒ“ƒ‹[ƒv
+	// ï¿½ï¿½ï¿½Cï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½v
 	void main_loop() {
-		// ƒ}ƒEƒXƒ|ƒCƒ“ƒ^‚ÌÀ•W‚ðŠ“¾B‚±‚ÌŽžmp‚ðXV‚·‚é‘O‚Émp_b‚ÉŒ»Ý‚Ìƒ|ƒCƒ“ƒ^‚ÌÀ•W‚ð‘Þ”ð‚µ‚Ä‚¨‚­
+		// ï¿½}ï¿½Eï¿½Xï¿½|ï¿½Cï¿½ï¿½ï¿½^ï¿½Ìï¿½ï¿½Wï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Bï¿½ï¿½ï¿½ÌŽï¿½mpï¿½ï¿½Xï¿½Vï¿½ï¿½ï¿½ï¿½Oï¿½ï¿½mp_bï¿½ÉŒï¿½ï¿½Ý‚Ìƒ|ï¿½Cï¿½ï¿½ï¿½^ï¿½Ìï¿½ï¿½Wï¿½ï¿½Þ”ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½
 		this->mp_b.x = this->mp.x;
 		this->mp_b.y = this->mp.y;
 		GetMousePoint(&this->mp.x, &this->mp.y);
 
-		// ƒ}ƒEƒX‚ª‰Ÿ‚³‚ê‚Ä‚½‚çƒn[ƒv‚ð’e‚­ˆ—‚ð‚·‚é
+		// ï¿½}ï¿½Eï¿½Xï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½nï¿½[ï¿½vï¿½ï¿½eï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		if((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) {
 			all_pluck();
 			// this->str.set_init(this->mp.x, this->mp.y);
@@ -444,16 +447,16 @@ public:
 			}
 		}
 
-		// ƒn[ƒv‚Ìó‘Ô‚ÌXV
+		// ï¿½nï¿½[ï¿½vï¿½Ìï¿½Ô‚ÌXï¿½V
 		this->str.update();
 	}
 
-	// ‰æ–Ê‚ÌXV
+	// ï¿½ï¿½Ê‚ÌXï¿½V
 	void draw() {
 		this->str.draw();
 	}
 
-	// Œ·‚Ì‘SU•ƒf[ƒ^‚ð‘‚«o‚µ
+	// ï¿½ï¿½ï¿½Ì‘Sï¿½Uï¿½ï¿½ï¿½fï¿½[ï¿½^ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½oï¿½ï¿½
 	void all_output() const {
 		this->str.output("amps.txt");
 	}
