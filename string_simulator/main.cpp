@@ -192,6 +192,23 @@ public:
 	T x, y;
 };
 
+class Image {
+private:
+	int handle;
+	double exRate, angle;
+	Point<int> coord;
+
+public:
+	Image(const TCHAR *path, int x, int y, double exRate, double angle): coord(x, y), exRate(exRate), angle(angle) {
+		SetTransColor(255, 255, 255);
+		this->handle = LoadGraph(path);
+	}
+
+	void draw() const {
+		DrawRotaGraph(this->coord.x, this->coord.y, this->exRate, this->angle, handle, true);
+	}
+};
+
 // ------------------------------------------------------ Œ·ŠÖŒW --------------------------------------------------------------------
 
 class MassPoint {
@@ -370,6 +387,8 @@ private:
 
 	Point<int> mp, mp_b;
 
+	Image harp_img;
+
 	void all_pluck() {
 		double res_y;
 		if(str.get_is_natural() && str.is_plucked(this->mp, this->mp_b, res_y)) {
@@ -381,7 +400,7 @@ private:
 	}
 
 public:
-	Root(): str(Point<double>(320, 80), 300, 50), updateFlag(false), mp(0, 0), mp_b(0, 0) {
+	Root(Image harp): str(Point<double>(320, 80), 300, 50), updateFlag(false), mp(0, 0), mp_b(0, 0), harp_img(harp) {
 	}
 
 	void main_loop() {
@@ -404,6 +423,7 @@ public:
 	}
 
 	void draw() {
+		this->harp_img.draw();
 		this->str.draw();
 	}
 
@@ -414,8 +434,8 @@ public:
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
 	SetOutApplicationLogValidFlag(FALSE);
-	ChangeWindowMode(true);
-	SetGraphMode(600, 600, 32);
+	ChangeWindowMode(false);
+	SetGraphMode(1600, 900, 32);
 	SetBackgroundColor(255, 255, 255);
 	SetMainWindowText(_T("Jikken"));
 	if(DxLib_Init() == -1) return -1;
@@ -431,7 +451,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		return -1;
 	}
 
-	Root root;
+	Root root(Image(_T("harp.png"), 800, 450, 0.8, 0));
 	while(ProcessMessage() == 0) {
 		ClearDrawScreen();
 		root.main_loop();
@@ -439,7 +459,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ScreenFlip();
 	}
 
-	root.all_output();
+	// root.all_output();
 
 	end();
 	DxLib_End();
