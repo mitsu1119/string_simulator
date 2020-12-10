@@ -12,6 +12,8 @@
 using namespace std;
 
 #define BLACK GetColor(0, 0, 0)
+#define RED GetColor(255, 0, 0)
+#define WHITE GetColor(255, 255, 255)
 #define SAMPLING_FREQ 44100
 #define BUF_SEC 1
 #define BUF_DIVIDES 100
@@ -261,10 +263,15 @@ private:
 		z_to_coord();
 
 		size_t number = 3;
-		if(this->recording_flag) this->amps.emplace_back((short)(1e3 * this->mass.at(number).z));
+		// if(this->recording_flag) this->amps.emplace_back((short)(1e3 * this->mass.at(number).z));
 		if(this->recording_flag) {
 			pulses[this->now_pulses_cnt] = (short)(1e3 * this->mass.at(number).z);
 			this->now_pulses_cnt++;
+			if(this->now_pulses_cnt == pulses_len) {
+				pDSBSecondary->Stop();
+				this->recording_flag = true;
+				this->now_pulses_cnt = 0;
+			}
 		}
 	}
 
@@ -354,7 +361,7 @@ public:
 
 	void draw() const {
 		for(size_t i = 1; i < this->N + 1; i++) {
-			DrawLineAA(this->mass.at(i - 1).coord.x, this->mass.at(i - 1).coord.y, this->mass.at(i).coord.x, this->mass.at(i).coord.y, BLACK);
+			DrawLineAA(this->mass.at(i - 1).coord.x, this->mass.at(i - 1).coord.y, this->mass.at(i).coord.x, this->mass.at(i).coord.y, RED);
 		}
 	}
 
@@ -363,7 +370,7 @@ public:
 		of << "[";
 		if(this->amps.size() > 0) {
 			for(size_t i = 0; i + 1 < this->amps.size(); i++) of << this->amps.at(i) << ", ";
-			of << this->amps.back(); //  amp_adj;
+			of << this->amps.back();	// amp_adj;
 		}
 		of << "]";
 		of.close();
@@ -400,7 +407,7 @@ private:
 	}
 
 public:
-	Root(Image harp): str(Point<double>(320, 80), 300, 50), updateFlag(false), mp(0, 0), mp_b(0, 0), harp_img(harp) {
+	Root(Image harp): str(Point<double>(1200, 170), 320, 50), updateFlag(false), mp(0, 0), mp_b(0, 0), harp_img(harp) {
 	}
 
 	void main_loop() {
@@ -432,13 +439,14 @@ public:
 	}
 };
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow) {
 	SetOutApplicationLogValidFlag(FALSE);
-	ChangeWindowMode(false);
+	ChangeWindowMode(TRUE);
 	SetGraphMode(1600, 900, 32);
 	SetBackgroundColor(255, 255, 255);
 	SetMainWindowText(_T("Jikken"));
 	if(DxLib_Init() == -1) return -1;
+	SetMouseDispFlag(TRUE);
 
 	SetDrawScreen(DX_SCREEN_BACK);
 
@@ -452,7 +460,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 
 	Root root(Image(_T("harp.png"), 800, 450, 0.8, 0));
-	while(ProcessMessage() == 0) {
+	while(ProcessMessage() == 0 && !CheckHitKey(KEY_INPUT_ESCAPE)) {
 		ClearDrawScreen();
 		root.main_loop();
 		root.draw();
