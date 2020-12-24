@@ -5,6 +5,11 @@
 #include <windows.h>
 #include <mmsystem.h>
 #include <dsound.h>
+#include <cstdio>
+#include <cmath>
+#include "SpidarMouse.h"
+
+#pragma comment (lib, "SpidarMouse.lib")
 
 #pragma comment(lib, "dsound.lib")
 #pragma comment(lib, "dxguid.lib")
@@ -236,6 +241,7 @@ private:
 
 	// ?v?Z?p?????????
 	double dt;
+	size_t number;
 
 	// ???R??????H true: ??? false: ??????
 	// ???R???update??????????R??v?Z????
@@ -273,12 +279,11 @@ private:
 		z_to_coord();
 
 		// ?g?`?f?[?^??L?^
-		size_t number = 3;
-		if(this->recording_flag) this->amps.emplace_back((short)(1e3 * this->mass.at(number).z));
+		if(this->recording_flag) this->amps.emplace_back((short)(1e3 * this->mass.at(this->number).z));
 	}
 
 public:
-	HString(Point<double> pos, double length, double max_amp): N(64), pos(pos), length(length), max_amp(max_amp), m(0.10), k(8.3), mass(this->N + 1), center_segment(0), dt(1.0/10.0), is_natural(true), recording_flag(false) {
+	HString(Point<double> pos, double length, double max_amp): N(64), pos(pos), length(length), max_amp(max_amp), m(0.10), k(8.3), mass(this->N + 1), center_segment(0), dt(1.0/10.0), number(3), is_natural(true), recording_flag(false) {
 		z_to_coord();
 	}
 
@@ -321,11 +326,11 @@ public:
 		double center_z_buf = this->mass.at(i).z;
 		this->mass.at(i).z = px;
 
-		// ?$B�5(B????Z?O?????g???S??A???????????_??????????????
+		// ?$B�5(B????Z?O?????g???S??A???????????_??????????????
 		double slope = static_cast<double>(px) / (this->mass.at(i).coord.y - this->pos.y);
 		for(size_t j = 1; j < i; j++) this->mass.at(j).z = slope * (this->mass.at(j).coord.y - this->pos.y);
 
-		// ?$B�5(B????Z?O?????g???S??A?????????????_??????????????
+		// ?$B�5(B????Z?O?????g???S??A?????????????_??????????????
 		slope = -static_cast<double>(px) / (this->length - static_cast<double>(this->mass.at(i).coord.y) + this->pos.y);
 		for(size_t j = i + 1; j < this->N; j++) this->mass.at(j).z = px + slope * (this->mass.at(j).coord.y - this->mass.at(i).coord.y);
 
@@ -379,6 +384,40 @@ public:
 			if(CheckHitKey(KEY_INPUT_ESCAPE) != 0) this->recording_flag = true;
 			for(size_t i = 0; i < 1000; i++) calcNext();
 			this->recording_flag = false;
+		}
+
+		if(!this->is_natural) {
+			// spidar mouse
+			double disp;
+
+			disp = this->mass.at(this->number).z;
+			// 右に引いている場合
+			// if
+			//		モーター1,2で引っ張る
+
+			// 左に引いている場合
+			// if
+			//		モーター3,4で引っ張る
+
+			// 変位取り出し
+			//this->mass.at(this->number).z
+
+			if(disp > 0){
+				// モーター1,2で引っ張る
+				SetMinForceDuty(0.8);
+				SetDutyOnCh(disp/max_amp , disp/max_amp ,0,0, 10);
+				SetMinForceDuty(0.9);
+			}else{
+				// モーター3,4で引っ張る
+				SetMinForceDuty(0.8);
+				SetDutyOnCh(0,0, disp/max_amp , disp/max_amp , 10);
+				SetMinForceDuty(0.9);
+			}
+
+			// SetForce( 0.5, 0.0, 1000);
+
+		} else {
+			SetForce(0,0,10);
 		}
 	}
 
@@ -466,6 +505,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	SetBackgroundColor(255, 255, 255);
 	SetMainWindowText(_T("Jikken"));
 	if(DxLib_Init() == -1) return -1;
+	if(OpenSpidarMouse() != 1) return -1;
 
 	SetDrawScreen(DX_SCREEN_BACK);
 
@@ -490,5 +530,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	end();
 	DxLib_End();
+	// SPIDAR-mouseの終了
+	CloseSpidarMouse();
 	return 0;
 }
