@@ -29,60 +29,68 @@ constexpr double amp_adj = 16380.0 / max_amp;
 
 LPDIRECTSOUND8 pDS = NULL;
 LPDIRECTSOUNDBUFFER pDSBPrimary = NULL;
-LPDIRECTSOUNDBUFFER pDSBSecondary = NULL;
-LPDIRECTSOUNDNOTIFY pDSNotify;
-DSBPOSITIONNOTIFY aPosNotify[BUF_DIVIDES];
+LPDIRECTSOUNDBUFFER pDSBSecondary[STR_NUM] = {NULL};
+LPDIRECTSOUNDNOTIFY pDSNotify[STR_NUM];
+DSBPOSITIONNOTIFY aPosNotify[STR_NUM][BUF_DIVIDES];
 
-HANDLE hNotificationEvent = NULL;
-DWORD dwNotifyThreadID = 0;
-DWORD dwBufferSize = 0;
-DWORD dwBufferUnit = 0;
-HANDLE hNotifyThread = NULL;
+HANDLE hNotificationEvent[STR_NUM] = {NULL};
+DWORD dwNotifyThreadID[STR_NUM] = {0};
+DWORD dwBufferSize[STR_NUM] = {0};
+DWORD dwBufferUnit[STR_NUM] = {0};
+HANDLE hNotifyThread[STR_NUM] = {NULL};
 
-short *pulses;
-size_t pulses_len;
-int read_pos = 0;
+short *pulses[STR_NUM];
+size_t pulses_len[STR_NUM];
+int read_pos[STR_NUM] = {0};
 
-DWORD ReadWave(LPDIRECTSOUNDBUFFER pDSBuffer, DWORD dwSize) {
-	HANDLE hFile;
+DWORD ReadWave(LPDIRECTSOUNDBUFFER pDSBuffer, DWORD dwSize, size_t buf_num) {
 	VOID *lpBuffer;
 	DWORD buffersize;
-	DWORD filesize;
 
-	if(read_pos == BUF_DIVIDES * BUF_SEC) {
-		read_pos++;
+	if(read_pos[buf_num] == BUF_DIVIDES * BUF_SEC) {
+		read_pos[buf_num]++;
 		return 1;
 	}
 
-	if(read_pos > BUF_DIVIDES * BUF_SEC) {
+	if(read_pos[buf_num] > BUF_DIVIDES * BUF_SEC) {
 		return 0;
 	}
 
-	pDSBuffer->Lock((read_pos % BUF_DIVIDES) * dwSize, dwSize, &lpBuffer, &buffersize, NULL, NULL, 0);
+	pDSBuffer->Lock((read_pos[buf_num] % BUF_DIVIDES) * dwSize, dwSize, &lpBuffer, &buffersize, NULL, NULL, 0);
 
-	memcpy((char *)lpBuffer, (char *)pulses + dwSize * read_pos, dwSize);
+	memcpy((char *)lpBuffer, (char *)(pulses[buf_num]) + dwSize * read_pos[buf_num], dwSize);
 
 	pDSBuffer->Unlock(lpBuffer, buffersize, NULL, 0);
-	read_pos++;
+	read_pos[buf_num]++;
 
 	return 1;
 }
 
 // ƒXƒŒƒbƒhˆ—
+class HWND_SIZE_T {
+public:
+	HWND_SIZE_T(HWND hWnd, size_t buf_num): hWnd(hWnd), buf_num(buf_num) {
+	}
+
+	HWND hWnd;
+	size_t buf_num;
+};
+
 DWORD WINAPI NotificationProc(LPVOID lpParameter) {
 	MSG msg;
-	HWND hWnd = (HWND)lpParameter;
+	HWND hWnd = ((HWND_SIZE_T *)lpParameter)->hWnd;
+	size_t buf_num = ((HWND_SIZE_T *)lpParameter)->buf_num;
 	BOOL bDone = FALSE;
 	DWORD dwResult;
 
 	while(!bDone) {
-		dwResult = MsgWaitForMultipleObjects(1, &hNotificationEvent, FALSE, INFINITE, QS_ALLEVENTS);
+		dwResult = MsgWaitForMultipleObjects(1, &(hNotificationEvent[buf_num]), FALSE, INFINITE, QS_ALLEVENTS);
 		switch(dwResult) {
 		case WAIT_OBJECT_0 + 0:
-			dwResult = ReadWave(pDSBSecondary, dwBufferUnit);
+			dwResult = ReadWave(pDSBSecondary[buf_num], dwBufferUnit[buf_num], buf_num);
 			if(dwResult == 0) {
-				read_pos = 0;
-				pDSBSecondary->Stop();
+				read_pos[buf_num] = 0;
+				pDSBSecondary[buf_num]->Stop();
 			}
 			break;
 		case WAIT_OBJECT_0 + 1:
@@ -94,8 +102,8 @@ DWORD WINAPI NotificationProc(LPVOID lpParameter) {
 			break;
 		}
 	}
-	read_pos = 0;
-	pDSBSecondary->Stop();
+	read_pos[buf_num] = 0;
+	pDSBSecondary[buf_num]->Stop();
 	return 0;
 }
 
@@ -127,59 +135,65 @@ int initDs(HWND hWnd) {
 	hr = pDSBPrimary->SetFormat(&wfx);
 	if(hr != DS_OK) return 0;
 
-	WAVEFORMATEX wfx2;
-	ZeroMemory(&wfx2, sizeof(WAVEFORMATEX));
-	wfx2.wFormatTag = (WORD)WAVE_FORMAT_PCM;
-	wfx2.nChannels = 1;
-	wfx2.nSamplesPerSec = SAMPLING_FREQ;
-	wfx2.wBitsPerSample = 16;
-	wfx2.nBlockAlign = (WORD)(wfx2.wBitsPerSample / 8 * wfx2.nChannels);
-	wfx2.nAvgBytesPerSec = (DWORD)(wfx2.nSamplesPerSec * wfx2.nBlockAlign);
+	for(size_t buf_num = 0; buf_num < STR_NUM; buf_num++) {
+		WAVEFORMATEX wfx2;
+		ZeroMemory(&wfx2, sizeof(WAVEFORMATEX));
+		wfx2.wFormatTag = (WORD)WAVE_FORMAT_PCM;
+		wfx2.nChannels = 1;
+		wfx2.nSamplesPerSec = SAMPLING_FREQ;
+		wfx2.wBitsPerSample = 16;
+		wfx2.nBlockAlign = (WORD)(wfx2.wBitsPerSample / 8 * wfx2.nChannels);
+		wfx2.nAvgBytesPerSec = (DWORD)(wfx2.nSamplesPerSec * wfx2.nBlockAlign);
 
-	DSBUFFERDESC dsbd2;
-	ZeroMemory(&dsbd2, sizeof(DSBUFFERDESC));
-	dsbd2.dwSize = sizeof(DSBUFFERDESC);
-	dsbd2.dwFlags = DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_CTRLPOSITIONNOTIFY | DSBCAPS_GLOBALFOCUS | DSBCAPS_STATIC | DSBCAPS_LOCDEFER;
-	dsbd2.dwBufferBytes = wfx2.nAvgBytesPerSec;
-	dsbd2.lpwfxFormat = &wfx2;
-	hr = pDS->CreateSoundBuffer(&dsbd2, &pDSBSecondary, NULL);
-	if(hr != DS_OK) return 0;
+		DSBUFFERDESC dsbd2;
+		ZeroMemory(&dsbd2, sizeof(DSBUFFERDESC));
+		dsbd2.dwSize = sizeof(DSBUFFERDESC);
+		dsbd2.dwFlags = DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_CTRLPOSITIONNOTIFY | DSBCAPS_GLOBALFOCUS | DSBCAPS_STATIC | DSBCAPS_LOCDEFER;
+		dsbd2.dwBufferBytes = wfx2.nAvgBytesPerSec;
+		dsbd2.lpwfxFormat = &wfx2;
+		hr = pDS->CreateSoundBuffer(&dsbd2, &(pDSBSecondary[buf_num]), NULL);
+		if(hr != DS_OK) return 0;
 
-	hNotificationEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	if(hNotificationEvent == NULL) return 0;
+		hNotificationEvent[buf_num] = CreateEvent(NULL, FALSE, FALSE, NULL);
+		if(hNotificationEvent[buf_num] == NULL) return 0;
 
-	hNotifyThread = CreateThread(NULL, 0, NotificationProc, hWnd, 0, &dwNotifyThreadID);
-	if(hNotifyThread == NULL) return 0;
+		HWND_SIZE_T x(hWnd, buf_num);
+		hNotifyThread[buf_num] = CreateThread(NULL, 0, NotificationProc, &x, 0, &(dwNotifyThreadID[buf_num]));
+		if(hNotifyThread[buf_num] == NULL) return 0;
 
-	dwBufferSize = dsbd2.dwBufferBytes;
-	dwBufferUnit = dwBufferSize / BUF_DIVIDES;
+		dwBufferSize[buf_num] = dsbd2.dwBufferBytes;
+		dwBufferUnit[buf_num] = dwBufferSize[buf_num] / BUF_DIVIDES;
 
-	pulses_len = dwBufferSize * BUF_SEC;
-	pulses = (short *)malloc(pulses_len * sizeof(short));
-	if(pulses == NULL) return 0;
-	ZeroMemory(pulses, (pulses_len * sizeof(short)));
-	
-	for(size_t i = 0; i < BUF_DIVIDES; i++) {
-		aPosNotify[i].dwOffset = dwBufferUnit * (i + 1) - 1;
-		aPosNotify[i].hEventNotify = hNotificationEvent;
+		pulses_len[buf_num] = dwBufferSize[buf_num] * BUF_SEC;
+		pulses[buf_num] = (short *)malloc(pulses_len[buf_num] * sizeof(short));
+		if(pulses[buf_num] == NULL) return 0;
+		ZeroMemory(pulses[buf_num], (pulses_len[buf_num] * sizeof(short)));
+
+		for(size_t i = 0; i < BUF_DIVIDES; i++) {
+			aPosNotify[buf_num][i].dwOffset = dwBufferUnit[buf_num] * (i + 1) - 1;
+			aPosNotify[buf_num][i].hEventNotify = hNotificationEvent[buf_num];
+		}
+
+		hr = pDSBSecondary[buf_num]->QueryInterface(IID_IDirectSoundNotify, (VOID **)&(pDSNotify[buf_num]));
+		if(hr != DS_OK) return 0;
+
+		hr = pDSNotify[buf_num]->SetNotificationPositions(BUF_DIVIDES, aPosNotify[buf_num]);
+		if(hr != DS_OK) return 0;
 	}
-
-	hr = pDSBSecondary->QueryInterface(IID_IDirectSoundNotify, (VOID **)&pDSNotify);
-	if(hr != DS_OK) return 0;
-
-	hr = pDSNotify->SetNotificationPositions(BUF_DIVIDES, aPosNotify);
-	if(hr != DS_OK) return 0;
 
 	return 1;
 }
 void end() {
-	pDSBSecondary->Stop();
+	for(size_t i = 0; i < STR_NUM; i++) {
+		pDSBSecondary[i]->Stop();
 
-	CloseHandle(hNotificationEvent);
-	CloseHandle(hNotifyThread);
-	free(pulses);
-	RELEASE(pDSNotify);
-	RELEASE(pDSBSecondary);
+		CloseHandle(hNotificationEvent[i]);
+		CloseHandle(hNotifyThread[i]);
+		free(pulses[i]);
+		RELEASE(pDSNotify[i]);
+		RELEASE(pDSBSecondary[i]);
+	}
+
 	RELEASE(pDSBPrimary);
 	RELEASE(pDS);
 }
@@ -243,6 +257,8 @@ private:
 	bool recording_flag;
 	size_t now_pulses_cnt;
 
+	size_t buf_num;
+
 	void z_to_coord() {
 		double dy = this->length / static_cast<double>(this->N);
 		for(size_t i = 0; i < this->N + 1; i++) {
@@ -266,16 +282,16 @@ private:
 		size_t number = 3;
 		// if(this->recording_flag) this->amps.emplace_back((short)(1e3 * this->mass.at(number).z));
 		if(this->recording_flag) {
-			pulses[this->now_pulses_cnt] = (short)(1e3 * this->mass.at(number).z);
+			pulses[this->buf_num][this->now_pulses_cnt] = (short)(1e3 * this->mass.at(number).z);
 			this->now_pulses_cnt++;
-			if(this->now_pulses_cnt == pulses_len) {
+			if(this->now_pulses_cnt == pulses_len[this->buf_num]) {
 				stop();
 			}
 		}
 	}
 
 public:
-	HString(Point<double> pos, double length, double max_amp): N(64), pos(pos), length(length), max_amp(max_amp), m(0.10), k(8.3), mass(this->N + 1), center_segment(0), dt(1.0/10.0), is_natural(true), recording_flag(false), now_pulses_cnt(0) {
+	HString(Point<double> pos, double length, double max_amp, size_t buf_num): N(64), pos(pos), length(length), max_amp(max_amp), m(0.10), k(8.3), mass(this->N + 1), center_segment(0), dt(1.0/10.0), is_natural(true), recording_flag(false), now_pulses_cnt(0), buf_num(buf_num) {
 		z_to_coord();
 	}
 
@@ -348,7 +364,7 @@ public:
 			this->is_natural = true;
 			double v2 = abs(this->mass.at(this->center_segment).z);
 			set_init(this->pos.x + this->max_amp * (1 - exp(-v2 / 5.0)), this->mass.at(this->center_segment).coord.y);
-			// play();
+			play();
 		}
 
 		if(this->is_natural) {
@@ -377,13 +393,13 @@ public:
 
 	void play() {
 		stop();
-		for(size_t i = 0; i < dwBufferUnit * INIT_COUNT / 2; i++) calcNext();
-		for(size_t i = 0; i < INIT_COUNT; i++) 	ReadWave(pDSBSecondary, dwBufferUnit);
-		pDSBSecondary->Play(0, 0, DSBPLAY_LOOPING);
+		for(size_t i = 0; i < dwBufferUnit[this->buf_num] * INIT_COUNT / 2; i++) calcNext();
+		for(size_t i = 0; i < INIT_COUNT; i++) 	ReadWave(pDSBSecondary[this->buf_num], dwBufferUnit[this->buf_num], this->buf_num);
+		pDSBSecondary[this->buf_num]->Play(0, 0, DSBPLAY_LOOPING);
 	}
 
 	void stop() {
-		pDSBSecondary->Stop();
+		pDSBSecondary[this->buf_num]->Stop();
 		this->recording_flag = true;
 		this->now_pulses_cnt = 0;
 	}
@@ -414,7 +430,7 @@ private:
 public:
 	Root(Image harp, size_t str_num): updateFlag(false), mp(0, 0), mp_b(0, 0), harp_img(harp) {
 		size_t interval = 100;
-		for(size_t i = 0; i < str_num; i++) this->strs.emplace_back(Point<double>(1200 - interval * i, 170), 320, 50);
+		for(size_t i = 0; i < str_num; i++) this->strs.emplace_back(Point<double>(1200 - interval * i, 170), 320, 30, i);
 	}
 
 	void main_loop() {
@@ -430,7 +446,7 @@ public:
 			for(auto &str: this->strs) {
 				if(!str.get_is_natural()) {
 					str.to_natural();
-					// this->str.play();
+					str.play();
 				}
 			}
 		}
