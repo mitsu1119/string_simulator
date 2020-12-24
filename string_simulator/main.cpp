@@ -21,6 +21,7 @@ using namespace std;
 
 #define RELEASE(x) if(x){x->Release(); x = NULL;}
 
+constexpr size_t STR_NUM = 5;
 constexpr double max_amp = 902448;
 constexpr double amp_adj = 16380.0 / max_amp;
 
@@ -347,7 +348,7 @@ public:
 			this->is_natural = true;
 			double v2 = abs(this->mass.at(this->center_segment).z);
 			set_init(this->pos.x + this->max_amp * (1 - exp(-v2 / 5.0)), this->mass.at(this->center_segment).coord.y);
-			play();
+			// play();
 		}
 
 		if(this->is_natural) {
@@ -391,7 +392,7 @@ public:
 // ------------------------------------------------------ ä«óùÉNÉâÉX -------------------------------------------
 class Root {
 private:
-	HString str;
+	std::vector<HString> strs;
 	bool updateFlag;
 
 	Point<int> mp, mp_b;
@@ -400,16 +401,20 @@ private:
 
 	void all_pluck() {
 		double res_y;
-		if(str.get_is_natural() && str.is_plucked(this->mp, this->mp_b, res_y)) {
-			str.set_init(this->mp.x, this->mp.y);
-			str.to_not_natural();
-		} else if(!str.get_is_natural()) {
-			str.set_init(this->mp.x, this->mp.y);
+		for(auto &str: this->strs) {
+			if(str.get_is_natural() && str.is_plucked(this->mp, this->mp_b, res_y)) {
+				str.set_init(this->mp.x, this->mp.y);
+				str.to_not_natural();
+			} else if(!str.get_is_natural()) {
+				str.set_init(this->mp.x, this->mp.y);
+			}
 		}
 	}
 
 public:
-	Root(Image harp): str(Point<double>(1200, 170), 320, 50), updateFlag(false), mp(0, 0), mp_b(0, 0), harp_img(harp) {
+	Root(Image harp, size_t str_num): updateFlag(false), mp(0, 0), mp_b(0, 0), harp_img(harp) {
+		size_t interval = 100;
+		for(size_t i = 0; i < str_num; i++) this->strs.emplace_back(Point<double>(1200 - interval * i, 170), 320, 50);
 	}
 
 	void main_loop() {
@@ -422,22 +427,24 @@ public:
 			// this->str.set_init(this->mp.x, this->mp.y);
 			// this->str.to_not_natural();
 		} else {
-			if(!this->str.get_is_natural()) {
-				this->str.to_natural();
-				this->str.play();
+			for(auto &str: this->strs) {
+				if(!str.get_is_natural()) {
+					str.to_natural();
+					// this->str.play();
+				}
 			}
 		}
 
-		this->str.update();
+		for(auto &str: this->strs) str.update();
 	}
 
 	void draw() {
 		this->harp_img.draw();
-		this->str.draw();
+		for(auto &str: this->strs) str.draw();
 	}
 
 	void all_output() const {
-		this->str.output("amps.txt");
+		for(auto &str: this->strs) str.output("amps.txt");
 	}
 };
 
@@ -461,7 +468,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		return -1;
 	}
 
-	Root root(Image(_T("harp.png"), 800, 450, 0.8, 0));
+	Root root(Image(_T("harp.png"), 800, 450, 0.8, 0), STR_NUM);
 	while(ProcessMessage() == 0 && !CheckHitKey(KEY_INPUT_ESCAPE)) {
 		ClearDrawScreen();
 		root.main_loop();
