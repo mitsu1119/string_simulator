@@ -268,9 +268,7 @@ private:
 			pulses[this->now_pulses_cnt] = (short)(1e3 * this->mass.at(number).z);
 			this->now_pulses_cnt++;
 			if(this->now_pulses_cnt == pulses_len) {
-				pDSBSecondary->Stop();
-				this->recording_flag = true;
-				this->now_pulses_cnt = 0;
+				stop();
 			}
 		}
 	}
@@ -377,12 +375,16 @@ public:
 	}
 
 	void play() {
-		pDSBSecondary->Stop();
-		this->recording_flag = true;
-		this->now_pulses_cnt = 0;
+		stop();
 		for(size_t i = 0; i < dwBufferUnit * INIT_COUNT / 2; i++) calcNext();
 		for(size_t i = 0; i < INIT_COUNT; i++) 	ReadWave(pDSBSecondary, dwBufferUnit);
 		pDSBSecondary->Play(0, 0, DSBPLAY_LOOPING);
+	}
+
+	void stop() {
+		pDSBSecondary->Stop();
+		this->recording_flag = true;
+		this->now_pulses_cnt = 0;
 	}
 };
 
