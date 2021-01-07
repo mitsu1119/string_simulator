@@ -430,7 +430,7 @@ private:
 
 public:
 	Root(Image harp, size_t str_num): updateFlag(false), mp(0, 0), mp_b(0, 0), harp_img(harp) {
-		size_t interval = 69;
+		double interval = 68.5;
 		std::random_device seed;
 		std::mt19937 mt(seed());
 		std::uniform_real_distribution<double> rndf_m(0.01, 0.5);
@@ -444,7 +444,7 @@ public:
 
 			of << "[" << i << "] m: " << m << " k:" << k << "\n";
 			
-			this->strs.emplace_back(Point<double>(491 + interval * i, 43), 440 - 10 * i, 20, i, m, k);
+			this->strs.emplace_back(Point<double>(484 + interval * i, 43), 438 - 10 * i, 20, i, m, k);
 		}
 		of << std::endl;
 		of.close();
@@ -484,7 +484,7 @@ public:
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow) {
 	SetOutApplicationLogValidFlag(FALSE);
 	ChangeWindowMode(TRUE);
-	SetGraphMode(1600, 731, 32);
+	SetGraphMode(1519, 729, 32);
 	SetBackgroundColor(255, 255, 255);
 	SetMainWindowText(_T("Jikken"));
 	if(DxLib_Init() == -1) return -1;
@@ -501,7 +501,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		return -1;
 	}
 
-	Root root(Image(_T("img/Main.png"), 800, 731/2, 1.0, 0), STR_NUM);
+	Root root(Image(_T("img/Main.png"), 1519/2 + 1, 729/2 + 1, 1.0, 0), STR_NUM);
 	while(ProcessMessage() == 0 && !CheckHitKey(KEY_INPUT_ESCAPE)) {
 		ClearDrawScreen();
 		root.main_loop();
