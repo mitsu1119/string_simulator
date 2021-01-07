@@ -22,6 +22,17 @@ using namespace std;
 
 #define RELEASE(x) if(x){x->Release(); x = NULL;}
 
+#define STR_M 0.1
+#define C4 1.402
+#define D4 1.824
+#define E4 2.31
+#define F4 2.534
+#define G4 3.16
+#define A4 4.03
+#define B4 5.12
+#define C5 5.702
+constexpr double STR_K[] = {C4, D4, E4, F4, G4, A4, B4, C5};
+
 constexpr size_t STR_NUM = 8;
 constexpr double max_amp = 902448;
 constexpr double amp_adj = 16380.0 / max_amp;
@@ -292,7 +303,7 @@ private:
 	}
 
 public:
-	HString(Point<double> pos, double length, double max_amp, size_t buf_num, double m = 0.1, double k = 8.3): N(64), pos(pos), length(length), max_amp(max_amp), m(m), k(k), mass(this->N + 1), center_segment(0), dt(1.0/10.0), is_natural(true), recording_flag(false), now_pulses_cnt(0), buf_num(buf_num) {
+	HString(Point<double> pos, double length, double max_amp, size_t buf_num, double m = 0.1, double k = 8.3): N(32), pos(pos), length(length), max_amp(max_amp), m(m), k(k), mass(this->N + 1), center_segment(0), dt(1.0/10.0), is_natural(true), recording_flag(false), now_pulses_cnt(0), buf_num(buf_num) {
 		z_to_coord();
 	}
 
@@ -444,7 +455,7 @@ public:
 
 			of << "[" << i << "] m: " << m << " k:" << k << "\n";
 			
-			this->strs.emplace_back(Point<double>(484 + interval * i, 43), 438 - 10 * i, 20, i, m, k);
+			this->strs.emplace_back(Point<double>(484 + interval * i, 43), 438 - 10 * i, 20, i, STR_M, STR_K[i]);
 		}
 		of << std::endl;
 		of.close();
