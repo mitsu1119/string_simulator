@@ -7,6 +7,10 @@
 #include <mmsystem.h>
 #include <dsound.h>
 
+#include "SpidarMouse.h"
+
+#pragma comment (lib, "SpidarMouse.lib")
+
 #pragma comment(lib, "dsound.lib")
 #pragma comment(lib, "dxguid.lib")
 
@@ -37,7 +41,7 @@ constexpr size_t STR_NUM = 8;
 constexpr double max_amp = 902448;
 constexpr double amp_adj = 16380.0 / max_amp;
 
-// ------------------------------------------------------ âπä÷åW -----------------------------------------------
+// ------------------------------------------------------ ÔøΩÔøΩÔøΩ÷åW -----------------------------------------------
 
 LPDIRECTSOUND8 pDS = NULL;
 LPDIRECTSOUNDBUFFER pDSBPrimary = NULL;
@@ -78,7 +82,7 @@ DWORD ReadWave(LPDIRECTSOUNDBUFFER pDSBuffer, DWORD dwSize, size_t buf_num) {
 	return 1;
 }
 
-// ÉXÉåÉbÉhèàóù
+// ÔøΩXÔøΩÔøΩÔøΩbÔøΩhÔøΩÔøΩÔøΩÔøΩ
 class HWND_SIZE_T {
 public:
 	HWND_SIZE_T(HWND hWnd, size_t buf_num): hWnd(hWnd), buf_num(buf_num) {
@@ -210,7 +214,7 @@ void end() {
 	RELEASE(pDS);
 }
 
-// ------------------------------------------------------ ï÷óòÇ»Ç‚Ç¬ --------------------------------------------------
+// ------------------------------------------------------ ÔøΩ÷óÔøΩÔøΩ»ÇÔøΩÔøΩ --------------------------------------------------
 
 template <typename T>
 class Point {
@@ -238,7 +242,7 @@ public:
 	}
 };
 
-// ------------------------------------------------------ å∑ä÷åW --------------------------------------------------------------------
+// ------------------------------------------------------ ÔøΩÔøΩÔøΩ÷åW --------------------------------------------------------------------
 
 class MassPoint {
 public:
@@ -371,6 +375,20 @@ public:
 		return false;
 	}
 
+	void set_motor(double disp){
+		if(!this->is_natural){
+			if(disp > 0){
+				SetDutyOnCh( disp/this->max_amp, disp/this->max_amp, 0, 0, 10);
+			}else if(disp < 0){
+				SetDutyOnCh( 0, 0, disp/this->max_amp, disp/this->max_amp, 10);
+			}else{
+				SetDutyOnCh( 0, 0, 0, 0, 10);
+			}
+		} else {
+			SetForce( 0, 0, 10);
+		}
+	}
+
 	void update() {
 		if(!this->is_natural && this->max_amp < abs(this->mass.at(this->center_segment).z)) {
 			this->is_natural = true;
@@ -417,7 +435,7 @@ public:
 	}
 };
 
-// ------------------------------------------------------ ä«óùÉNÉâÉX -------------------------------------------
+// ------------------------------------------------------ ÔøΩ«óÔøΩÔøΩNÔøΩÔøΩÔøΩX -------------------------------------------
 class Root {
 private:
 	std::vector<HString> strs;
@@ -499,6 +517,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	SetBackgroundColor(255, 255, 255);
 	SetMainWindowText(_T("Jikken"));
 	if(DxLib_Init() == -1) return -1;
+	if(OpenSpidarMouse() != 1) return -1;
 	SetMouseDispFlag(TRUE);
 
 	SetDrawScreen(DX_SCREEN_BACK);
@@ -524,5 +543,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
 	end();
 	DxLib_End();
+	CloseSpidarMouse();
 	return 0;
 }
