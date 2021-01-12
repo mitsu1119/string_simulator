@@ -18,7 +18,7 @@ using namespace std;
 #define SAMPLING_FREQ 44100
 #define BUF_SEC 1
 #define BUF_DIVIDES 100
-#define INIT_COUNT 5
+#define INIT_COUNT 100
 
 #define RELEASE(x) if(x){x->Release(); x = NULL;}
 
@@ -59,14 +59,18 @@ DWORD ReadWave(LPDIRECTSOUNDBUFFER pDSBuffer, DWORD dwSize, size_t buf_num) {
 	VOID *lpBuffer;
 	DWORD buffersize;
 
+	/*
 	if(read_pos[buf_num] == BUF_DIVIDES * BUF_SEC) {
 		read_pos[buf_num]++;
 		return 1;
 	}
+	*/
 
+	/*
 	if(read_pos[buf_num] > BUF_DIVIDES * BUF_SEC) {
 		return 0;
 	}
+	*/
 
 	pDSBuffer->Lock((read_pos[buf_num] % BUF_DIVIDES) * dwSize, dwSize, &lpBuffer, &buffersize, NULL, NULL, 0);
 
@@ -295,10 +299,7 @@ private:
 		// if(this->recording_flag) this->amps.emplace_back((short)(1e3 * this->mass.at(number).z));
 		if(this->recording_flag) {
 			pulses[this->buf_num][this->now_pulses_cnt] = (short)(1e3 * this->mass.at(number).z);
-			this->now_pulses_cnt++;
-			if(this->now_pulses_cnt == pulses_len[this->buf_num]) {
-				stop();
-			}
+			this->now_pulses_cnt = (this->now_pulses_cnt + 1) % pulses_len[this->buf_num];
 		}
 	}
 
