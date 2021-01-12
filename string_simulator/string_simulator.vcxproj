@@ -155,6 +155,12 @@
   <ItemGroup>
     <None Include="gen_wav.py" />
   </ItemGroup>
+  <ItemGroup>
+    <Library Include="SpidarMouse.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="SpidarMouse.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

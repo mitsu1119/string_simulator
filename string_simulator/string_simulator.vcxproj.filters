@@ -24,4 +24,14 @@
       <Filter>ソース ファイル</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Library Include="SpidarMouse.lib">
+      <Filter>リソース ファイル</Filter>
+    </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="SpidarMouse.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>
