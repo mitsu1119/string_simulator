@@ -1,3 +1,4 @@
+#include "SpidarMouse.h"
 #include "DxLib.h"
 #include <vector>
 #include <string>
@@ -7,7 +8,6 @@
 #include <mmsystem.h>
 #include <dsound.h>
 
-#include "SpidarMouse.h"
 
 #pragma comment (lib, "SpidarMouse.lib")
 
@@ -511,6 +511,7 @@ public:
 	}
 };
 
+bool non_spidar = false;
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow) {
 	SetOutApplicationLogValidFlag(FALSE);
 	ChangeWindowMode(TRUE);
@@ -518,7 +519,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	SetBackgroundColor(255, 255, 255);
 	SetMainWindowText(_T("Jikken"));
 	if(DxLib_Init() == -1) return -1;
-	if(OpenSpidarMouse() != 1) return -1;
+	if(OpenSpidarMouse() != 1) {
+		SetMainWindowText(_T("Jikken (non SPIDAR-mouse mode)"));
+		non_spidar = true;
+	}
 	SetMouseDispFlag(TRUE);
 
 	SetDrawScreen(DX_SCREEN_BACK);
@@ -544,6 +548,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
 	end();
 	DxLib_End();
-	CloseSpidarMouse();
+	if(!non_spidar) CloseSpidarMouse();
 	return 0;
 }
