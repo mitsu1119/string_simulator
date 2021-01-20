@@ -63,19 +63,16 @@ DWORD ReadWave(LPDIRECTSOUNDBUFFER pDSBuffer, DWORD dwSize, size_t buf_num) {
 	VOID *lpBuffer;
 	DWORD buffersize;
 
-	/*
-	if(read_pos[buf_num] == BUF_DIVIDES * BUF_SEC) {
+	if(read_pos[buf_num] == BUF_DIVIDES * BUF_SEC * 2) {
 		read_pos[buf_num]++;
 		return 1;
 	}
-	*/
-
-	/*
-	if(read_pos[buf_num] > BUF_DIVIDES * BUF_SEC) {
+	
+	
+	if(read_pos[buf_num] > BUF_DIVIDES * BUF_SEC * 2) {
 		return 0;
 	}
-	*/
-
+	
 	pDSBuffer->Lock((read_pos[buf_num] % BUF_DIVIDES) * dwSize, dwSize, &lpBuffer, &buffersize, NULL, NULL, 0);
 
 	memcpy((char *)lpBuffer, (char *)(pulses[buf_num]) + dwSize * read_pos[buf_num], dwSize);
@@ -423,7 +420,7 @@ public:
 	}
 
 	void play() {
-		stop();
+		//stop();
 		for(size_t i = 0; i < dwBufferUnit[this->buf_num] * INIT_COUNT / 2; i++) calcNext();
 		for(size_t i = 0; i < INIT_COUNT; i++) 	ReadWave(pDSBSecondary[this->buf_num], dwBufferUnit[this->buf_num], this->buf_num);
 		pDSBSecondary[this->buf_num]->Play(0, 0, DSBPLAY_LOOPING);
@@ -431,6 +428,7 @@ public:
 
 	void stop() {
 		pDSBSecondary[this->buf_num]->Stop();
+		read_pos[this->buf_num] = 0;
 		this->recording_flag = true;
 		this->now_pulses_cnt = 0;
 	}
@@ -445,11 +443,15 @@ private:
 	Point<int> mp, mp_b;
 
 	Image harp_img;
+	std::vector<Image> octaves;
+
+	int octave;
 
 	void all_pluck() {
 		double res_y;
 		for(auto &str: this->strs) {
 			if(str.get_is_natural() && str.is_plucked(this->mp, this->mp_b, res_y)) {
+				str.stop();
 				str.set_init(this->mp.x, this->mp.y);
 				str.to_not_natural();
 			} else if(!str.get_is_natural()) {
@@ -459,7 +461,7 @@ private:
 	}
 
 public:
-	Root(Image harp, size_t str_num): updateFlag(false), mp(0, 0), mp_b(0, 0), harp_img(harp) {
+	Root(Image harp, size_t str_num): updateFlag(false), mp(0, 0), mp_b(0, 0), harp_img(harp), octave(2) {
 		double interval = 68.5;
 		std::random_device seed;
 		std::mt19937 mt(seed());
@@ -478,6 +480,12 @@ public:
 		}
 		of << std::endl;
 		of.close();
+
+		this->octaves.emplace_back(_T("img/octave1.png"), 1419, 398, 0.4, 0);
+		this->octaves.emplace_back(_T("img/octave2.png"), 1419, 398, 0.4, 0);
+		this->octaves.emplace_back(_T("img/octave3.png"), 1419, 398, 0.4, 0);
+		this->octaves.emplace_back(_T("img/octave4.png"), 1419, 398, 0.4, 0);
+		this->octaves.emplace_back(_T("img/octave5.png"), 1419, 398, 0.4, 0);
 	}
 
 	void main_loop() {
@@ -499,10 +507,19 @@ public:
 		}
 
 		for(auto &str: this->strs) str.update();
+
+		int rot = GetMouseWheelRotVol();
+		if(rot == -1) this->octave--;
+		if(rot == 1) this->octave++;
+		if(rot <= -2) this->octave -= 2;
+		if(rot >= 2) this->octave += 2;
+		if(this->octave < 0) this->octave = 0;
+		if(this->octave > 4) this->octave = 4;
 	}
 
 	void draw() {
 		this->harp_img.draw();
+		this->octaves.at(this->octave).draw();
 		for(auto &str: this->strs) str.draw();
 	}
 
@@ -514,7 +531,7 @@ public:
 bool non_spidar = false;
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow) {
 	SetOutApplicationLogValidFlag(FALSE);
-	ChangeWindowMode(TRUE);
+	ChangeWindowMode(FALSE);
 	SetGraphMode(1519, 729, 32);
 	SetBackgroundColor(255, 255, 255);
 	SetMainWindowText(_T("Jikken"));
