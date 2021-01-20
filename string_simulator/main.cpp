@@ -498,9 +498,14 @@ public:
 		this->octaves.emplace_back(_T("img/octave3.png"), 1419, 398, 0.4, 0);
 		this->octaves.emplace_back(_T("img/octave4.png"), 1419, 398, 0.4, 0);
 		this->octaves.emplace_back(_T("img/octave5.png"), 1419, 398, 0.4, 0);
+
+		SetMousePoint(420, 200);
 	}
 
 	void main_loop() {
+
+		if((GetMouseInput() & MOUSE_INPUT_LEFT) != 0 && (GetMouseInput() & MOUSE_INPUT_RIGHT) != 0) SetMousePoint(420, 200);
+
 		this->mp_b.x = this->mp.x;
 		this->mp_b.y = this->mp.y;
 		GetMousePoint(&this->mp.x, &this->mp.y);
