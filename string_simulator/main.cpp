@@ -238,6 +238,14 @@ public:
 		this->handle = LoadGraph(path);
 	}
 
+	void resetX(int x) {
+		this->coord.x = x;
+	}
+
+	void resetY(int y) {
+		this->coord.y = y;
+	}
+
 	void draw() const {
 		DrawRotaGraph(this->coord.x, this->coord.y, this->exRate, this->angle, handle, true);
 	}
@@ -284,7 +292,7 @@ private:
 		}
 	}
 
-	void calcNext() {
+	void calcNext(int volume) {
 		double f, a;
 		for(size_t i = 1; i < this->N; i++) {
 			f = -this->k * (this->mass.at(i).z - this->mass.at(i - 1).z) - this->k * (this->mass.at(i).z - this->mass.at(i + 1).z) - this->mass.at(i).v * 0.0001;
@@ -299,7 +307,7 @@ private:
 		size_t number = 3;
 		// if(this->recording_flag) this->amps.emplace_back((short)(1e3 * this->mass.at(number).z));
 		if(this->recording_flag) {
-			pulses[this->buf_num][this->now_pulses_cnt] = (short)(1e3 * this->mass.at(number).z);
+			pulses[this->buf_num][this->now_pulses_cnt] = (short)(1e3 * (0.2 * volume) * this->mass.at(number).z);
 			this->now_pulses_cnt = (this->now_pulses_cnt + 1) % pulses_len[this->buf_num];
 		}
 	}
@@ -387,17 +395,17 @@ public:
 		}
 	}
 
-	void update() {
+	void update(int volume) {
 		if(!this->is_natural && this->max_amp < abs(this->mass.at(this->center_segment).z)) {
 			this->is_natural = true;
 			double v2 = abs(this->mass.at(this->center_segment).z);
 			set_init(this->pos.x + this->max_amp * (1 - exp(-v2 / 5.0)), this->mass.at(this->center_segment).coord.y);
-			play();
+			play(volume);
 		}
 
 		if(this->is_natural) {
 			if(CheckHitKey(KEY_INPUT_ESCAPE) != 0) this->recording_flag = true;
-			for(size_t i = 0; i < 1000; i++) calcNext();
+			for(size_t i = 0; i < 1000; i++) calcNext(volume);
 			// this->recording_flag = false;
 		}
 	}
@@ -419,9 +427,9 @@ public:
 		of.close();
 	}
 
-	void play() {
+	void play(int volume) {
 		//stop();
-		for(size_t i = 0; i < dwBufferUnit[this->buf_num] * INIT_COUNT / 2; i++) calcNext();
+		for(size_t i = 0; i < dwBufferUnit[this->buf_num] * INIT_COUNT / 2; i++) calcNext(volume);
 		for(size_t i = 0; i < INIT_COUNT; i++) 	ReadWave(pDSBSecondary[this->buf_num], dwBufferUnit[this->buf_num], this->buf_num);
 		pDSBSecondary[this->buf_num]->Play(0, 0, DSBPLAY_LOOPING);
 	}
@@ -443,9 +451,11 @@ private:
 	Point<int> mp, mp_b;
 
 	Image harp_img;
+	Image volume_img;
 	std::vector<Image> octaves;
 
 	int octave;
+	int volume;
 
 	void all_pluck() {
 		double res_y;
@@ -461,7 +471,7 @@ private:
 	}
 
 public:
-	Root(Image harp, size_t str_num): updateFlag(false), mp(0, 0), mp_b(0, 0), harp_img(harp), octave(2) {
+	Root(Image harp, size_t str_num): updateFlag(false), mp(0, 0), mp_b(0, 0), harp_img(harp), octave(2), volume(8), volume_img(_T("img/SliderKnob.png"), 1294, 457, 0.26, 0) {
 		double interval = 68.5;
 		std::random_device seed;
 		std::mt19937 mt(seed());
@@ -480,6 +490,8 @@ public:
 		}
 		of << std::endl;
 		of.close();
+
+		this->volume_img.resetY(457.4 - 35.5 * this->volume);
 
 		this->octaves.emplace_back(_T("img/octave1.png"), 1419, 398, 0.4, 0);
 		this->octaves.emplace_back(_T("img/octave2.png"), 1419, 398, 0.4, 0);
@@ -501,25 +513,40 @@ public:
 			for(auto &str: this->strs) {
 				if(!str.get_is_natural()) {
 					str.to_natural();
-					str.play();
+					str.play(this->volume);
 				}
 			}
 		}
 
-		for(auto &str: this->strs) str.update();
+		for(auto &str: this->strs) str.update(this->volume);
 
 		int rot = GetMouseWheelRotVol();
-		if(rot == -1) this->octave--;
-		if(rot == 1) this->octave++;
-		if(rot <= -2) this->octave -= 2;
-		if(rot >= 2) this->octave += 2;
-		if(this->octave < 0) this->octave = 0;
-		if(this->octave > 4) this->octave = 4;
+		if(rot != 0) {
+			if((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0) {
+				// octave
+				if(rot == -1) this->octave--;
+				if(rot == 1) this->octave++;
+				if(rot <= -2) this->octave -= 2;
+				if(rot >= 2) this->octave += 2;
+				if(this->octave < 0) this->octave = 0;
+				if(this->octave > 4) this->octave = 4;
+			} else {
+				// volume
+				if(rot == -1) this->volume--;
+				if(rot == 1) this->volume++;
+				if(rot <= -2) this->volume -= 2;
+				if(rot >= 2) this->volume += 2;
+				if(this->volume < 0) this->volume = 0;
+				if(this->volume > 10) this->volume = 10;
+				this->volume_img.resetY(457.4 - 35.5 * this->volume);
+			}
+		}
 	}
 
 	void draw() {
 		this->harp_img.draw();
 		this->octaves.at(this->octave).draw();
+		this->volume_img.draw();
 		for(auto &str: this->strs) str.draw();
 	}
 
